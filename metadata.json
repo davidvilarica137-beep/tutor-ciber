@@ -1,0 +1,6 @@
+{
+  "name": "DNF Cyber Tutor",
+  "description": "Professor virtual e laboratório interativo para ensino progressivo de Python e Cibersegurança.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
