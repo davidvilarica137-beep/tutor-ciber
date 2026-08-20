@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user's profile and state.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": ["createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "#/entities/User",
+      "description": "User profiles and settings."
+    }
+  }
+}

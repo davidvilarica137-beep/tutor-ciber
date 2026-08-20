@@ -1,3 +1,17 @@
+export type AppTab = 
+  | 'tutor'
+  | 'redes'
+  | 'linux'
+  | 'python'
+  | 'cybersecurity'
+  | 'osint'
+  | 'wireshark'
+  | 'labs'
+  | 'visualizations'
+  | 'exercises'
+  | 'glossary'
+  | 'progress';
+
 export type StudentLevel = 'INICIANTE' | 'BÁSICO' | 'INTERMEDIÁRIO' | 'AVANÇADO';
 
 export type TrackId =

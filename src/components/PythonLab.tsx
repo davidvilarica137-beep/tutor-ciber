@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Play,
   RotateCcw,
@@ -12,6 +12,9 @@ import {
   Copy,
   Check,
   Zap,
+  History,
+  Clock,
+  Download,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { runPythonCodeLocally } from '../lib/pythonRunner';
@@ -21,6 +24,12 @@ interface PythonLabProps {
   initialCode?: string;
   studentLevel: StudentLevel;
   onExerciseCompleted: (id: string) => void;
+}
+
+interface CodeSnapshot {
+  id: string;
+  timestamp: Date;
+  code: string;
 }
 
 const PRESET_TEMPLATES = [
@@ -224,7 +233,29 @@ auditar_sistema()`
   const [tutorEvaluation, setTutorEvaluation] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'console' | 'diagnostics' | 'tutor'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'diagnostics' | 'tutor' | 'history'>('console');
+  const [versionHistory, setVersionHistory] = useState<CodeSnapshot[]>([]);
+
+  const lastSavedCodeRef = useRef<string>(code);
+
+  // Autosave timer: every 2 minutes of inactivity
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (code !== lastSavedCodeRef.current && code.trim() !== '') {
+        setVersionHistory((prev) => [
+          { id: Date.now().toString(), timestamp: new Date(), code: code },
+          ...prev,
+        ]);
+        lastSavedCodeRef.current = code;
+      }
+    }, 120000); // 120000 ms = 2 minutes of inactivity
+
+    return () => clearTimeout(timeoutId);
+  }, [code]);
+
+  const handleRestoreSnapshot = (snapshotCode: string) => {
+    setCode(snapshotCode);
+  };
 
   const handleRunCode = () => {
     const result = runPythonCodeLocally(code);
@@ -411,6 +442,18 @@ auditar_sistema()`
               <Lightbulb className="w-3.5 h-3.5 text-cyan-400" />
               <span>Feedback DNF</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-3 py-1 text-xs font-mono rounded-md transition-colors flex items-center space-x-1.5 ${
+                activeTab === 'history'
+                  ? 'bg-slate-800 text-purple-300 font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <History className="w-3.5 h-3.5 text-purple-400" />
+              <span className="hidden sm:inline">Histórico</span>
+            </button>
           </div>
         </div>
 
@@ -500,6 +543,45 @@ auditar_sistema()`
                 <div className="h-full flex flex-col items-center justify-center text-slate-500 py-12 text-center">
                   <Lightbulb className="w-8 h-8 mb-2 opacity-40 text-cyan-400" />
                   <p>Clique em "Avaliar com Tutor (IA)" para receber feedback pedagógico detalhado.</p>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'history' && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 text-slate-300 font-bold border-b border-slate-800 pb-2">
+                <History className="w-4 h-4 text-purple-400" />
+                <span>Snapshots Automáticos</span>
+              </div>
+              
+              {versionHistory.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 py-12 text-center">
+                  <Clock className="w-8 h-8 mb-2 opacity-40 text-purple-400" />
+                  <p>O histórico de versionamento está vazio.</p>
+                  <p className="text-[10px] mt-1">O código é salvo automaticamente a cada 2 minutos de inatividade.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {versionHistory.map((snap) => (
+                    <div key={snap.id} className="p-3 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col space-y-2 group transition-colors hover:border-slate-700">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-purple-300 font-bold flex items-center space-x-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{snap.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        </span>
+                        <button
+                          onClick={() => handleRestoreSnapshot(snap.code)}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center space-x-1 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Restaurar</span>
+                        </button>
+                      </div>
+                      <pre className="p-2 bg-slate-900 rounded border border-slate-800 text-[10px] text-slate-400 overflow-x-auto line-clamp-3">
+                        <code>{snap.code}</code>
+                      </pre>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

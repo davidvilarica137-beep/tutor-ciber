@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 import { TrackNavigator } from './components/TrackNavigator';
 import { ClassroomChat } from './components/ClassroomChat';
 import { PythonLab } from './components/PythonLab';
@@ -12,12 +13,10 @@ import { TerminalLab } from './components/TerminalLab';
 import { SecurityPlayground } from './components/SecurityPlayground';
 import { DiagnosticModal } from './components/DiagnosticModal';
 import { MethodologyModal } from './components/MethodologyModal';
-import { StudentLevel, TrackId, ProgressionStage } from './types';
+import { StudentLevel, TrackId, ProgressionStage, AppTab } from './types';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<
-    'classroom' | 'python_lab' | 'terminal_lab' | 'security_playground'
-  >('classroom');
+  const [activeTab, setActiveTab] = useState<AppTab>('tutor');
 
   const [activeTrackId, setActiveTrackId] = useState<TrackId>('python');
   const [activeStage, setActiveStage] = useState<ProgressionStage>('fundamentos');
@@ -66,71 +65,86 @@ export default function App() {
 
   const handleSendCodeToEditor = (code: string) => {
     setEditorCode(code);
-    setActiveTab('python_lab');
+    setActiveTab('python');
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-900/60 selection:text-emerald-200">
-      {/* Top Header */}
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        studentLevel={studentLevel}
-        onOpenDiagnostic={() => setIsDiagnosticOpen(true)}
-        onOpenMethodology={() => setIsMethodologyOpen(true)}
-        activeTrackId={activeTrackId}
-        onSelectTrack={(trackId) => {
-          setActiveTrackId(trackId);
-          setActiveStage('fundamentos');
-        }}
-        completedExercisesCount={completedExercises.length}
-        xpPoints={xpPoints}
-      />
+    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans selection:bg-emerald-900/60 selection:text-emerald-200">
+      {/* Sidebar */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 space-y-4">
-        {/* Official 10-Area Track & 8-Stage Progression Navigator */}
-        <TrackNavigator
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-full">
+        {/* Top Header */}
+        <Header
+          activeTab={activeTab as any}
+          setActiveTab={setActiveTab as any}
+          studentLevel={studentLevel}
+          onOpenDiagnostic={() => setIsDiagnosticOpen(true)}
+          onOpenMethodology={() => setIsMethodologyOpen(true)}
           activeTrackId={activeTrackId}
           onSelectTrack={(trackId) => {
             setActiveTrackId(trackId);
             setActiveStage('fundamentos');
           }}
-          activeStage={activeStage}
-          onSelectStage={setActiveStage}
-          completedLessons={completedExercises}
-          studentLevel={studentLevel}
+          completedExercisesCount={completedExercises.length}
+          xpPoints={xpPoints}
         />
 
-        {/* Active Tab View */}
-        {activeTab === 'classroom' && (
-          <ClassroomChat
+        {/* Scrollable Main Area */}
+        <main className="flex-1 overflow-y-auto w-full p-4 sm:p-6 space-y-4">
+          {/* Official 10-Area Track & 8-Stage Progression Navigator */}
+          <TrackNavigator
             activeTrackId={activeTrackId}
+            onSelectTrack={(trackId) => {
+              setActiveTrackId(trackId);
+              setActiveStage('fundamentos');
+            }}
             activeStage={activeStage}
             onSelectStage={setActiveStage}
+            completedLessons={completedExercises}
             studentLevel={studentLevel}
-            onSendCodeToEditor={handleSendCodeToEditor}
-            onExerciseCompleted={handleExerciseCompleted}
           />
-        )}
 
-        {activeTab === 'python_lab' && (
-          <PythonLab
-            key={editorCode || 'default'}
-            initialCode={editorCode}
-            studentLevel={studentLevel}
-            onExerciseCompleted={handleExerciseCompleted}
-          />
-        )}
+          {/* Active Tab View */}
+          {activeTab === 'tutor' && (
+            <ClassroomChat
+              activeTrackId={activeTrackId}
+              activeStage={activeStage}
+              onSelectStage={setActiveStage}
+              studentLevel={studentLevel}
+              onSendCodeToEditor={handleSendCodeToEditor}
+              onExerciseCompleted={handleExerciseCompleted}
+            />
+          )}
 
-        {activeTab === 'terminal_lab' && (
-          <TerminalLab onExerciseCompleted={handleExerciseCompleted} />
-        )}
+          {activeTab === 'python' && (
+            <PythonLab
+              key={editorCode || 'default'}
+              initialCode={editorCode}
+              studentLevel={studentLevel}
+              onExerciseCompleted={handleExerciseCompleted}
+            />
+          )}
 
-        {activeTab === 'security_playground' && (
-          <SecurityPlayground onExerciseCompleted={handleExerciseCompleted} />
-        )}
-      </main>
+          {activeTab === 'linux' && (
+            <TerminalLab onExerciseCompleted={handleExerciseCompleted} />
+          )}
+
+          {activeTab === 'cybersecurity' && (
+            <SecurityPlayground onExerciseCompleted={handleExerciseCompleted} />
+          )}
+
+          {['redes', 'osint', 'wireshark', 'labs', 'visualizations', 'exercises', 'glossary', 'progress'].includes(activeTab) && (
+            <div className="flex items-center justify-center h-64 border-2 border-dashed border-slate-800 rounded-2xl text-slate-500">
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-slate-300">Módulo em Desenvolvimento</h3>
+                <p className="mt-2 text-sm">A nova plataforma interativa está sendo construída (Fase 2).</p>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Modals */}
       <DiagnosticModal

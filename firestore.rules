@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isUserOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for User profile
+    function isValidUser(data) {
+      return data.keys().hasAll(['createdAt', 'updatedAt']) 
+          && data.keys().size() <= 4
+          && (data.get('email', '') is string)
+          && (data.get('displayName', '') is string);
+    }
+    
+    match /users/{userId} {
+      // Users can only read and write their own profile
+      allow read: if isUserOwner(userId);
+      
+      allow create: if isUserOwner(userId)
+                    && isValidUser(incoming())
+                    && incoming().createdAt == request.time
+                    && incoming().updatedAt == request.time;
+                    
+      allow update: if isUserOwner(userId)
+                    && isValidUser(incoming())
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().updatedAt == request.time;
+    }
+  }
+}
